@@ -10,16 +10,17 @@
 
 @interface IQPopUp : UIView
 
-@property (nonatomic,assign) CGRect showOnRect;
-@property (nonatomic,assign) int popWidth;
-@property (nonatomic,assign) CGRect fieldFrame;
-@property (nonatomic,copy) NSString *strMsg;
-@property (nonatomic,retain) UIColor *popUpColor;
+@property (nonatomic) CGRect showOnRect;
+@property (nonatomic) int popWidth;
+@property (nonatomic) CGRect fieldFrame;
+@property (nonatomic, copy) NSString *strMsg;
+@property (nonatomic) UIColor *popUpColor;
 
 @end
 
 @implementation IQPopUp
-@synthesize showOnRect,popWidth,fieldFrame,popUpColor;
+
+@synthesize showOnRect, popWidth, fieldFrame, popUpColor;
 
 -(void)drawRect:(CGRect)rect{
     const CGFloat *color=CGColorGetComponents(popUpColor.CGColor);
@@ -28,15 +29,15 @@
     CGContextRef ctx = UIGraphicsGetCurrentContext();
     CGContextSetRGBFillColor(ctx, color[0], color[1], color[2], 1);
     CGContextSetShadowWithColor(ctx, CGSizeMake(0, 0), 7.0, [UIColor blackColor].CGColor);
-	CGPoint points[3] = { CGPointMake(15, 5), CGPointMake(25, 25),
-		CGPointMake(5,25)};
+    CGPoint points[3] = { CGPointMake(15, 5), CGPointMake(25, 25),
+        CGPointMake(5,25)};
     CGContextAddLines(ctx, points, 3);
     CGContextClosePath(ctx);
     CGContextFillPath(ctx);
     UIImage *viewImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     
-    CGRect imgframe=CGRectMake((showOnRect.origin.x+((showOnRect.size.width-30)/2)), ((showOnRect.size.height/2)+showOnRect.origin.y), 30, 13);
+    CGRect imgframe = CGRectMake((showOnRect.origin.x+((showOnRect.size.width-30)/2)), ((showOnRect.size.height/2)+showOnRect.origin.y), 30, 13);
     
     UIImageView *img=[[UIImageView alloc] initWithImage:viewImage highlightedImage:nil];
     [self addSubview:img];
@@ -61,7 +62,7 @@
     dict=NSDictionaryOfVariableBindings(view);
     [view.superview addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"H:|-%f-[view(%f)]",fieldFrame.origin.x+(fieldFrame.size.width-(size.width+(PaddingInErrorPopUp*2))),size.width+(PaddingInErrorPopUp*2)] options:NSLayoutFormatDirectionLeadingToTrailing  metrics:nil views:dict]];
     [view.superview addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:[NSString stringWithFormat:@"V:|-%f-[view(%f)]",imgframe.origin.y+imgframe.size.height,size.height+(PaddingInErrorPopUp*2)] options:NSLayoutFormatDirectionLeadingToTrailing  metrics:nil views:dict]];
-
+    
     UILabel *lbl=[[UILabel alloc] initWithFrame:CGRectZero];
     lbl.font=font;
     lbl.numberOfLines=0;
@@ -85,10 +86,10 @@
 
 @interface TextFieldValidatorSupport : NSObject<UITextFieldDelegate>
 
-@property (nonatomic,retain) id<UITextFieldDelegate> delegate;
-@property (nonatomic,assign) BOOL validateOnCharacterChanged;
-@property (nonatomic,assign) BOOL validateOnResign;
-@property (nonatomic,unsafe_unretained) IQPopUp *popUp;
+@property (nonatomic, weak) id<UITextFieldDelegate> delegate;
+@property (nonatomic) BOOL validateOnCharacterChanged;
+@property (nonatomic) BOOL validateOnResign;
+@property (nonatomic, unsafe_unretained) IQPopUp *popUp;
 @end
 
 @implementation TextFieldValidatorSupport
@@ -164,36 +165,41 @@
 @end
 
 @implementation TextFieldValidator
-@synthesize presentInView,validateOnCharacterChanged,popUpColor,isMandatory,validateOnResign;
+@synthesize validateOnCharacterChanged,popUpColor,isMandatory,validateOnResign;
+
+-(void)txfv_commonInit {
+    arrRegx = [NSMutableArray array];
+    validateOnCharacterChanged = YES;
+    isMandatory = YES;
+    validateOnResign = YES;
+    _trimmingMaxLength = 0;
+    _trimBeforeValidate = YES;
+    popUpColor = ColorPopUpBg;
+    strLengthValidationMsg = [MsgValidateLength copy];
+    supportObj = [[TextFieldValidatorSupport alloc] init];
+    supportObj.validateOnCharacterChanged = validateOnCharacterChanged;
+    supportObj.validateOnResign = validateOnResign;
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(didHideKeyboard)
+                                                 name:UIKeyboardWillHideNotification object:nil];
+}
 
 #pragma mark - Default Methods of UIView
-- (id)initWithFrame:(CGRect)frame{
-    self = [super initWithFrame:frame];
-    if (self) {
-        
-    }
+- (instancetype)initWithFrame:(CGRect)frame{
+    self = [super initWithFrame:frame];  if (!self) return nil;
+    [self txfv_commonInit];
     return self;
 }
 
--(id)initWithCoder:(NSCoder *)aDecoder{
-    self=[super initWithCoder:aDecoder];
-    arrRegx=[[NSMutableArray alloc] init];
-    validateOnCharacterChanged=YES;
-    isMandatory=YES;
-    validateOnResign=YES;
-    popUpColor=ColorPopUpBg;
-    strLengthValidationMsg=[MsgValidateLength copy];
-    supportObj=[[TextFieldValidatorSupport alloc] init];
-    supportObj.validateOnCharacterChanged=validateOnCharacterChanged;
-    supportObj.validateOnResign=validateOnResign;
-    NSNotificationCenter *notify=[NSNotificationCenter defaultCenter];
-    [notify addObserver:self selector:@selector(didHideKeyboard) name:UIKeyboardWillHideNotification object:nil];
+-(instancetype)initWithCoder:(NSCoder *)aDecoder{
+    self = [super initWithCoder:aDecoder]; if (!self) return nil;
+    [self txfv_commonInit];
     return self;
 }
 
 -(void)setDelegate:(id<UITextFieldDelegate>)deleg{
-    supportObj.delegate=deleg;
-    super.delegate=supportObj;
+    supportObj.delegate = deleg;
+    super.delegate = supportObj;
 }
 
 -(void)setValidateOnCharacterChanged:(BOOL)validate{
@@ -207,8 +213,18 @@
 }
 
 #pragma mark - Public methods
+
+- (UIView *)presentInView {
+    if (_presentInView == nil) {
+        _presentInView = [self superview];
+    }
+    return _presentInView;
+}
+
+
 -(void)addRegx:(NSString *)strRegx withMsg:(NSString *)msg{
-    NSDictionary *dic=[[NSDictionary alloc] initWithObjectsAndKeys:strRegx,@"regx",msg,@"msg", nil];
+    NSDictionary *dic = @{@"regx":strRegx,
+                          @"msg":msg};
     [arrRegx addObject:dic];
 }
 
@@ -217,31 +233,52 @@
 }
 
 -(void)addConfirmValidationTo:(TextFieldValidator *)txtConfirm withMsg:(NSString *)msg{
-    NSDictionary *dic=[[NSDictionary alloc] initWithObjectsAndKeys:txtConfirm,@"confirm",msg,@"msg", nil];
+    NSDictionary *dic = @{@"confirm":txtConfirm,
+                          @"msg":msg};
     [arrRegx addObject:dic];
 }
 
 -(BOOL)validate{
-    if(isMandatory){
-        if([self.text length]==0){
+    return [self validateShowingErrorMessage:YES];
+}
+- (BOOL)isValid {
+    return [self validateShowingErrorMessage:NO];
+}
+
+-(BOOL)validateShowingErrorMessage:(BOOL)showErrorMessage {
+    if (self.trimBeforeValidate) {
+        self.text = [self.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if (self.trimmingMaxLength > 0) {
+            self.text = [self.text substringToIndex:self.trimmingMaxLength];
+        }
+    }
+    
+    if (isMandatory) {
+        if (self.text.length == 0) {
             [self showErrorIconForMsg:strLengthValidationMsg];
             return NO;
         }
     }
-    for (int i=0; i<[arrRegx count]; i++) {
-        NSDictionary *dic=[arrRegx objectAtIndex:i];
-        if([dic objectForKey:@"confirm"]){
-            TextFieldValidator *txtConfirm=[dic objectForKey:@"confirm"];
-            if(![txtConfirm.text isEqualToString:self.text]){
-                [self showErrorIconForMsg:[dic objectForKey:@"msg"]];
+    for (int i=0; i < arrRegx.count; i++) {
+        NSDictionary *dic = arrRegx[i];
+        TextFieldValidator *txtConfirm = dic[@"confirm"];
+        if (txtConfirm) {
+            if (![txtConfirm.text isEqualToString:self.text]){
+                if (showErrorMessage) {
+                    [self showErrorIconForMsg:dic[@"msg"]];
+                }
                 return NO;
             }
-        }else if(![[dic objectForKey:@"regx"] isEqualToString:@""] && [self.text length]!=0 && ![self validateString:self.text withRegex:[dic objectForKey:@"regx"]]){
-            [self showErrorIconForMsg:[dic objectForKey:@"msg"]];
+        } else if (![dic[@"regx"] isEqualToString:@""] && self.text.length != 0 && ![self validateString:self.text withRegex:dic[@"regx"]]){
+            if (showErrorMessage) {
+                [self showErrorIconForMsg:dic[@"msg"]];
+            }
             return NO;
         }
     }
-    self.rightView=nil;
+    if (showErrorMessage) {
+        self.rightView = nil;
+    }
     return YES;
 }
 
@@ -274,19 +311,21 @@
 }
 
 -(void)showErrorWithMsg:(NSString *)msg{
-    popUp=[[IQPopUp alloc] initWithFrame:CGRectZero];
+    popUp = [[IQPopUp alloc] initWithFrame:CGRectZero];
     popUp.strMsg=msg;
-    popUp.popUpColor=popUpColor;
-    popUp.showOnRect=[self convertRect:self.rightView.frame toView:presentInView];
-    popUp.fieldFrame=[self.superview convertRect:self.frame toView:presentInView];
-    popUp.backgroundColor=[UIColor clearColor];
-    [presentInView addSubview:popUp];
+    popUp.popUpColor = popUpColor;
+    popUp.showOnRect = [self convertRect:self.rightView.frame toView:self.presentInView];
+    popUp.fieldFrame = [self.superview convertRect:self.frame toView:self.presentInView];
+    popUp.backgroundColor = [UIColor clearColor];
+    [self.presentInView addSubview:popUp];
     
-    popUp.translatesAutoresizingMaskIntoConstraints=NO;
-    NSDictionary *dict=NSDictionaryOfVariableBindings(popUp);
+    popUp.translatesAutoresizingMaskIntoConstraints = NO;
+    NSDictionary *dict = NSDictionaryOfVariableBindings(popUp);
     [popUp.superview addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[popUp]-0-|" options:NSLayoutFormatDirectionLeadingToTrailing  metrics:nil views:dict]];
     [popUp.superview addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-0-[popUp]-0-|" options:NSLayoutFormatDirectionLeadingToTrailing  metrics:nil views:dict]];
-    supportObj.popUp=popUp;
+    supportObj.popUp = popUp;
 }
 
 @end
+
+

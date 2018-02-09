@@ -51,15 +51,22 @@ NS_CLASS_AVAILABLE_IOS(6_0) @interface TextFieldValidator : UITextField<UITextFi
 
 }
 
-@property (nonatomic,assign) BOOL isMandatory;   /**< Default is YES*/
+@property (nonatomic) BOOL IBInspectable isMandatory;   /**< Default is YES*/
 
-@property (nonatomic,retain) IBOutlet UIView *presentInView;    /**< Assign view on which you want to show popup and it would be good if you provide controller's view*/
+@property (nonatomic, weak) UIView *presentInView;    /**< Assign view on which you want to show popup and it would be good if you provide controller's view*/
 
-@property (nonatomic,retain) UIColor *popUpColor;   /**< Assign popup background color, you can also assign default popup color from macro "ColorPopUpBg" at the top*/
+@property (nonatomic) IBInspectable UIColor *popUpColor;   /**< Assign popup background color, you can also assign default popup color from macro "ColorPopUpBg" at the top*/
 
-@property (nonatomic,assign) BOOL validateOnCharacterChanged; /**< Default is YES, Use it whether you want to validate text on character change or not.*/
+@property (nonatomic) IBInspectable BOOL validateOnCharacterChanged; /**< Default is YES, Use it whether you want to validate text on character change or not.*/
 
-@property (nonatomic,assign) BOOL validateOnResign; /**< Default is YES, Use it whether you want to validate text on resign or not.*/
+@property (nonatomic) IBInspectable BOOL validateOnResign; /**< Default is YES, Use it whether you want to validate text on resign or not.*/
+
+@property (nonatomic) IBInspectable BOOL trimBeforeValidate; /**< Removes whitespaces */
+@property (nonatomic) IBInspectable NSUInteger trimmingMaxLength; /**< Use Zero to disable trimming */
+
+
+/** Checks if the text is valid without showing error message */
+- (BOOL)isValid;
 
 /**
     Use to add regex for validating textfield text, you need to specify all your regex in queue that you want to validate and their messages respectively that will show when any regex validation will fail.
